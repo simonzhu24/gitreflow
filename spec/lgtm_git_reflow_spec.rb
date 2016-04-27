@@ -55,6 +55,7 @@ describe GitReflow do
 
     before do
       allow(GitReflow).to receive(:append_to_squashed_commit_message).and_return(true)
+      allow(GitReflow).to receive(:post_github_api).and_return({})
 
       module Kernel
         def system(cmd)
@@ -163,7 +164,9 @@ describe GitReflow do
                 destination_branch:  'master',
                 pull_request_number: existing_pull_request.number,
                 lgtm_authors:        ['nhance', 'Simon'],
-                message:             existing_pull_request.body
+                title:          existing_pull_request.title,
+                message:        existing_pull_request.body,
+                head:           existing_pull_request.head
               })
 
               expect { subject }.to_not have_output "Merging pull request ##{existing_pull_request.number}: '#{existing_pull_request.title}', from '#{existing_pull_request.head.label}' into '#{existing_pull_request.base.label}'"
@@ -335,7 +338,9 @@ describe GitReflow do
                 destination_branch:  'master',
                 pull_request_number: existing_pull_request.number,
                 lgtm_authors:        ['nhance', 'Simon'],
-                message:             existing_pull_request.body
+                title:          existing_pull_request.title,
+                message:        existing_pull_request.body,
+                head:           existing_pull_request.head
               })
 
               expect { subject }.to have_output "Merging pull request ##{existing_pull_request.number}: '#{existing_pull_request.title}', from '#{existing_pull_request.head.label}' into '#{existing_pull_request.base.label}'"

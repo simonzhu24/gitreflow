@@ -189,6 +189,7 @@ describe GitReflow do
 
     before do
       allow(GitReflow).to receive(:append_to_squashed_commit_message).and_return(true)
+      allow(GitReflow).to receive(:post_github_api).and_return({})
 
       module Kernel
         def system(cmd)
@@ -310,6 +311,7 @@ describe GitReflow do
                 allow(github).to receive(:find_open_pull_request).and_return(existing_pull_request)
                 allow(GitReflow).to receive(:get_first_commit_message).and_return(first_commit_message)
                 allow(existing_pull_request).to receive(:reviewers).and_return(lgtm_comment_authors)
+                allow(GitReflow).to receive(:post_github_api).and_return({})
               end
 
               it "includes the first commit message for the new branch in the commit message of the merge" do
@@ -324,7 +326,9 @@ describe GitReflow do
                 destination_branch:  'master',
                 pull_request_number: existing_pull_request.number,
                 lgtm_authors:        ['nhance'],
-                message:             existing_pull_request.body
+                title:          existing_pull_request.title,
+                message:        existing_pull_request.body,
+                head:           existing_pull_request.head
               })
 
               expect { subject }.to have_output "Merging pull request ##{existing_pull_request.number}: '#{existing_pull_request.title}', from '#{existing_pull_request.head.label}' into '#{existing_pull_request.base.label}'"
@@ -470,6 +474,7 @@ describe GitReflow do
         end
 
         it "merges and squashes the feature branch into the master branch" do
+          allow(GitReflow).to receive(:post_github_api).and_return({})
           expect(GitReflow).to receive(:merge_feature_branch)
           subject
         end

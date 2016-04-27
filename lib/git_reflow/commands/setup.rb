@@ -25,5 +25,12 @@ command :setup do |c|
     GitReflow::Config.add "constants.minimumApprovals", ask("Set the minimum number of approvals (leaving blank will require approval from all commenters): "), local: reflow_options[:project_only]
     GitReflow::Config.add "constants.approvalRegex", GitReflow::GitServer::PullRequest::DEFAULT_APPROVAL_REGEX, local: reflow_options[:project_only]
     
+    say("Enter the follow information associated with your remote repository: (The information is used to run 'git reflow deliver'.")
+    GitReflow::Config.add "github.owner", ask("Enter the owner of the remote repository: "), local: reflow_options[:project_only]
+    GitReflow::Config.add "github.repo", ask("Enter the name of the remote repository: "), local: reflow_options[:project_only]
+
+    # Sets the user's github auth token
+    GitReflow::Config.set "github.oauth-token", ask("Set the your local github authorization token: (You cannot run 'git reflow deliver' without it!) "), local: reflow_options[:project_only]
+    say("Thanks! Your settings are saved to #{GitReflow::Config::CONFIG_FILE_PATH}.")
   end
 end

@@ -78,6 +78,24 @@ module GitReflow
           approved
         end
 
+        def merge_feature_branch(feature_branch_name, options = {})
+          options[:destination_branch] ||= 'master'
+
+          message = "#{options[:message]}"
+
+          if "#{options[:pull_request_number]}".length > 0
+            message << "\nMerges ##{options[:pull_request_number]}\n"
+          end
+
+          if lgtm_authors = Array(options[:lgtm_authors]) and lgtm_authors.any?
+            message << "\nLGTM given by: @#{lgtm_authors.join(', @')}\n"
+          end
+
+          run_command_with_label "git checkout #{options[:destination_branch]}"
+          run_command_with_label "git merge --squash #{feature_branch_name}"
+
+          append_to_squashed_commit_message(message) if message.length > 0
+        end
       end
     end
   end

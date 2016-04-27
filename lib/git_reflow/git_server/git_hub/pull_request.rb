@@ -78,6 +78,37 @@ module GitReflow
           end
         end
 
+        def merge_feature_branch(feature_branch_name, options = {})
+          options[:destination_branch] ||= 'master'
+
+          message = "#{options[:message]}"
+
+          if "#{options[:pull_request_number]}".length > 0
+            message << "\nMerges ##{options[:pull_request_number]}\n"
+          end
+
+          if lgtm_authors = Array(options[:lgtm_authors]) and lgtm_authors.any?
+            message << "\nLGTM given by: @#{lgtm_authors.join(', @')}\n"
+          end
+
+          data = {
+            "commit_title" => options[:title],
+            "commit_message" => options[:message],
+            "sha" => options[:head].sha,
+            "squash" => true
+          }
+
+          res = GitServer::GitHub.merge(
+            "#{GitReflow::Config.get('github.owner')}", 
+            "#{GitReflow::Config.get('github.repo')}", 
+            "#{options[:pull_request_number]}", 
+            data
+          )
+
+          append_to_squashed_commit_message(message) if message.length > 0
+          return res
+        end
+
         def build
           github_build_status = GitReflow.git_server.get_build_status(self.head.sha)
           build_status_object = Struct.new(:state, :description, :url)

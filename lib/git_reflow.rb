@@ -107,10 +107,6 @@ module GitReflow
     feature_branch    = current_branch
     base_branch       = options['base'] || 'master'
 
-    update_current_branch
-    fetch_destination(base_branch)
-    update_destination(feature_branch)
-
     begin
       existing_pull_request = git_server.find_open_pull_request( :from => current_branch, :to => base_branch )
 
@@ -125,25 +121,29 @@ module GitReflow
                          end
 
         if existing_pull_request.good_to_merge?(force: options['skip_lgtm'])
-          puts "Merging pull request ##{existing_pull_request.number}: '#{existing_pull_request.title}', from '#{existing_pull_request.feature_branch_name}' into '#{existing_pull_request.base_branch_name}'"
+          puts "Merging pull request ##{existing_pull_request.number}: '#{existing_pull_request.title}', from '#{existing_pull_request.feature_branch_name}' into '#{GitReflow::Config.get("github.owner")}:#{base_branch}'"
 
-          update_destination(base_branch)
-          merge_feature_branch(feature_branch,
-                               :destination_branch  => base_branch,
-                               :pull_request_number => existing_pull_request.number,
-                               :lgtm_authors        => existing_pull_request.approvals,
-                               :message             => commit_message)
-          committed = run_command_with_label 'git commit', with_system: true
+          res = existing_pull_request.merge_feature_branch(
+            feature_branch,
+            :destination_branch  => base_branch,
+            :pull_request_number => existing_pull_request.number,
+            :lgtm_authors        => existing_pull_request.approvals,
+            :title               => existing_pull_request.title,
+            :message             => commit_message,
+            :head                => existing_pull_request.head
+          )
 
-          if committed
-            say "Merge complete!", :success
+          if res.code == "200"
+            # if committed
+            say "Pull Request successfully merged.", :success
 
             # check if user always wants to push and cleanup, otherwise ask
             always_deploy_and_cleanup = GitReflow::Config.get('reflow.always-deploy-and-cleanup') == "true"
             deploy_and_cleanup = always_deploy_and_cleanup || (ask "Would you like to push this branch to your remote repo and cleanup your feature branch? ") =~ /^y/i
 
             if deploy_and_cleanup
-              run_command_with_label "git push origin #{base_branch}"
+              # Pulls merged changes from remote base_branch
+              run_command_with_label "git pull origin #{base_branch}"
               run_command_with_label "git push origin :#{feature_branch}"
               run_command_with_label "git branch -D #{feature_branch}"
               puts "Nice job buddy."
@@ -151,8 +151,13 @@ module GitReflow
               puts "Cleanup halted.  Local changes were not pushed to remote repo.".colorize(:red)
               puts "To reset and go back to your branch run \`git reset --hard origin/#{base_branch} && git checkout #{feature_branch}\`"
             end
+
+          elsif res.code == "405"
+            say "Pull Request is not mergeable. Try 'git reflow refresh' first.", :deliver_halted
+          elsif res.code == "409"
+            say "Head branch was modified. Review and try the merge again. Try 'git reflow refresh' first.", :deliver_halted
           else
-            say "There were problems commiting your feature... please check the errors above and try again.", :error
+            say "There was another error. Please review the pull request and try again.", :deliver_halted
           end
         else
           say existing_pull_request.rejection_message, :deliver_halted
@@ -185,7 +190,7 @@ module GitReflow
   end
 
   def git_server
-    @git_server ||= GitServer.connect provider: GitReflow::Config.get('reflow.git-server').strip, silent: true
+    @git_server ||= GitServer.connect provider: "#{GitReflow::Config.get('reflow.git-server')}".strip, silent: true
   end
 
 end
