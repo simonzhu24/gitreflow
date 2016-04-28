@@ -102,7 +102,11 @@ In addition, it takes in an optional flag of a base branch name. If you don't pa
 The base branch name is the base branch that you want to base your feature off of. 
 This ensures that everytime you start a new base branch, it will be based off of your latest remote base.
 
+<<<<<<< HEAD
   git reflow start nh-branch-name --base base-branch-name
+=======
+  git reflow start nh-branch-name --base=base-branch-name
+>>>>>>> 88a91546322b41a98e0da99bfc520e77483c7332
 
 [PROTIP]  Use your initials at the beginning of each branch so your team knows
           who is responsible for each. My initials are 'NH', so all of my branches start with +nh-+

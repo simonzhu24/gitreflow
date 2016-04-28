@@ -1,3 +1,4 @@
+
 desc 'Start will create a new feature branch and setup remote tracking'
 long_desc <<LONGTIME
   Performs the following:\n
@@ -15,7 +16,7 @@ command :start do |c|
     else
       # base_branch is the branch that you want to base your feature branch off of
       # This command allows you to 'git reflow start' off your base branch
-      base_branch = options[:base] || "master"
+      base_branch = options[:base]
   
       `git checkout #{base_branch}`
       `git pull origin #{base_branch}`
